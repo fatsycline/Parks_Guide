@@ -15,23 +15,25 @@
 # ... ... expression (or if a given regular expression matches a particular string, which comes down to the same thing).
 import urllib2
 import re
+import time
 
 # the wikipedia page I pulled the information from (the nat'l parks server was too slow)
 body = urllib2.urlopen('https://en.wikipedia.org/wiki/List_of_national_parks_of_the_United_States').read()
 
-# ... re.compile is how i matched the pattern of the url in the doc so we can search it????? 
-# ... ... and the re.DOTALL flag helps with matching '.' somehow
+# ... re.compile is how i matched the pattern of the table in the doc so we can search it
+# ... ... and the re.DOTALL flag helps with matching new lines in the table.
 #pattern = re.compile(r'<tr>\s*<th[^>]*>\s*(.*?)</th>.*?</tr>', flags=re.DOTALL)
 pattern = re.compile(r'<tr>' + (r'\s*<t[hd][^>]*>(.*?)</t[hd]>'*7) + '.*?</tr>', flags=re.DOTALL)
 
-# ... re.sub leaves strings alone if they don't match any characters.
+# ... this is removing all the html in the top line and second line is tabs and new lines.
 def strip_html(s):
 	s = re.sub(r'<[^>]*>', '', s)
 	s = re.sub(r'[\n\t\r ]+', ' ', s)
 	return s
 
-# ... returns patterns by scanning left to right in a string as a list of strings and returning results as tuples. non duplicates. 
-matches = pattern.findall(body)[1:]
+# ... returns patterns by scanning left to right in a string as a list of strings and returning results as tuples. non duplicates.
+# ... I skipped the first row because it's all headers. 
+table_rows = pattern.findall(body)[1:]
 parks = [
 	(
 		strip_html(name), 
@@ -39,7 +41,7 @@ parks = [
 		strip_html(date_established), 
 		strip_html(description)
 	)
-	for (name, photo, location, date_established, area, recreation_visitors, description) in matches
+	for (name, photo, location, date_established, area, recreation_visitors, description) in table_rows
 	]
 # ... this is the function that scans for matches in data and pulls up / matches the correct information
 def find_parks(name_query=None, location_query=None, description_query=None):
@@ -70,7 +72,7 @@ def find_parks(name_query=None, location_query=None, description_query=None):
 
 # for name, location, date_established, description in parks:
 #     print '%s %s %s %s' % (name, location, date_established, description)
-
+# a tstring format ('%s\t%s..' % (none, none,...)) because it's cleaner than combining strings with +s
 def create_parks_doc(file_name):
 	with open (file_name, mode = 'w') as my_file:
 		for name, location, date_established, description in parks:
@@ -84,6 +86,13 @@ def print_parks(match_parks):
 		# see http://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux
 	    print '\033[0;32m%s\033[0m \033[0;33m%s\033[0m %s %s' % (name, location, date_established, description)
 
+
+# print the Ascii art
+with open('parks_ascii_art.txt', 'r') as f:
+	ascii_art = f.read()
+for line in ascii_art.split('\n'):
+	print line
+	time.sleep(0.1)
 while True:
 	q = raw_input('Search parks by name, state, or description: ')
 	if 'name' == q or q.startswith('n'):
