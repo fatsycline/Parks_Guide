@@ -16,6 +16,8 @@
 import urllib2
 import re
 import time
+import sys
+import json
 
 # the wikipedia page I pulled the information from (the nat'l parks server was too slow)
 body = urllib2.urlopen('https://en.wikipedia.org/wiki/List_of_national_parks_of_the_United_States').read()
@@ -87,20 +89,44 @@ def print_parks(match_parks):
 	    print '\033[0;32m%s\033[0m \033[0;33m%s\033[0m %s %s' % (name, location, date_established, description)
 
 
-# print the Ascii art
-with open('parks_ascii_art.txt', 'r') as f:
-	ascii_art = f.read()
-for line in ascii_art.split('\n'):
-	print line
-	time.sleep(0.1)
-while True:
-	q = raw_input('Search parks by name, state, or description: ')
-	if 'name' == q or q.startswith('n'):
-		name = raw_input('Enter the name of the Nat\'l Park you want to search ')
-		print_parks(find_parks(name_query=name))
-	elif 'location' == q or q.startswith('l') or q.startswith('s'):
-		state = raw_input('Which state do you want to search? ')
-		print_parks(find_parks(location_query=state))
-	elif 'description' == q or q.startswith('d'):
-		about = raw_input('Which feature do you want to search? \n e.g. Mountains, Desert, Volcanoe ')
-		print_parks(find_parks(description_query=about))
+def export():
+	parks_ser = [
+		{
+			'name': name,
+			'location': location,
+			'date_established': date_established,
+			'description': description
+		}
+		for name, location, date_established, description in parks
+	]
+	print json.dumps(parks_ser, sort_keys=True, indent=4, separators=(',', ': '))
+
+
+def main():
+	args = sys.argv[1:]
+	if 1 == len(args) and '--export' == args[0]:
+		export()
+		return
+
+	# print the Ascii art
+	with open('parks_ascii_art.txt', 'r') as f:
+		ascii_art = f.read()
+	for line in ascii_art.split('\n'):
+		print line
+		time.sleep(0.1)
+	while True:
+		q = raw_input('Search parks by name, state, or description: ')
+		if 'name' == q or q.startswith('n'):
+			name = raw_input('Enter the name of the Nat\'l Park you want to search ')
+			print_parks(find_parks(name_query=name))
+		elif 'location' == q or q.startswith('l') or q.startswith('s'):
+			state = raw_input('Which state do you want to search? ')
+			print_parks(find_parks(location_query=state))
+		elif 'description' == q or q.startswith('d'):
+			about = raw_input('Which feature do you want to search? \n e.g. Mountains, Desert, Volcanoe ')
+			print_parks(find_parks(description_query=about))
+
+
+if '__main__' == __name__:
+	main()
+
